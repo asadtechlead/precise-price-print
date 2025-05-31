@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Plus, Trash2, Printer, Download, FileText, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import Footer from '@/components/Footer';
 
 interface LineItem {
   id: string;
@@ -633,6 +633,8 @@ const Index = () => {
           </div>
         </div>
       </div>
+
+      <Footer />
 
       <style dangerouslySetInnerHTML={{
         __html: `
