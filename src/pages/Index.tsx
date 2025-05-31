@@ -1,12 +1,12 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Trash2, Printer, Download, FileText } from 'lucide-react';
+import { Plus, Trash2, Printer, Download, FileText, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface LineItem {
@@ -35,6 +35,13 @@ interface CustomerInfo {
   zip: string;
   email: string;
 }
+
+const STORAGE_KEYS = {
+  COMPANY_INFO: 'invoicepro_company_info',
+  CUSTOMER_INFO: 'invoicepro_customer_info',
+  INVOICE_SETTINGS: 'invoicepro_invoice_settings',
+  LINE_ITEMS: 'invoicepro_line_items'
+};
 
 const Index = () => {
   const { toast } = useToast();
@@ -69,6 +76,112 @@ const Index = () => {
 
   const [taxRate, setTaxRate] = useState(0);
   const [notes, setNotes] = useState('');
+
+  // Load data from localStorage on component mount
+  useEffect(() => {
+    const savedCompanyInfo = localStorage.getItem(STORAGE_KEYS.COMPANY_INFO);
+    const savedCustomerInfo = localStorage.getItem(STORAGE_KEYS.CUSTOMER_INFO);
+    const savedInvoiceSettings = localStorage.getItem(STORAGE_KEYS.INVOICE_SETTINGS);
+    const savedLineItems = localStorage.getItem(STORAGE_KEYS.LINE_ITEMS);
+
+    if (savedCompanyInfo) {
+      setCompanyInfo(JSON.parse(savedCompanyInfo));
+    }
+    if (savedCustomerInfo) {
+      setCustomerInfo(JSON.parse(savedCustomerInfo));
+    }
+    if (savedInvoiceSettings) {
+      const settings = JSON.parse(savedInvoiceSettings);
+      setDueDate(settings.dueDate || '');
+      setTaxRate(settings.taxRate || 0);
+      setNotes(settings.notes || '');
+    }
+    if (savedLineItems) {
+      setLineItems(JSON.parse(savedLineItems));
+    }
+  }, []);
+
+  // Save to localStorage whenever data changes
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.COMPANY_INFO, JSON.stringify(companyInfo));
+  }, [companyInfo]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.CUSTOMER_INFO, JSON.stringify(customerInfo));
+  }, [customerInfo]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.INVOICE_SETTINGS, JSON.stringify({
+      dueDate,
+      taxRate,
+      notes
+    }));
+  }, [dueDate, taxRate, notes]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.LINE_ITEMS, JSON.stringify(lineItems));
+  }, [lineItems]);
+
+  const clearCompanyInfo = () => {
+    setCompanyInfo({
+      name: '',
+      address: '',
+      city: '',
+      state: '',
+      zip: '',
+      phone: '',
+      email: ''
+    });
+    toast({
+      title: "Company information cleared",
+      description: "All company fields have been reset.",
+    });
+  };
+
+  const clearCustomerInfo = () => {
+    setCustomerInfo({
+      name: '',
+      address: '',
+      city: '',
+      state: '',
+      zip: '',
+      email: ''
+    });
+    toast({
+      title: "Customer information cleared",
+      description: "All customer fields have been reset.",
+    });
+  };
+
+  const clearInvoiceSettings = () => {
+    setDueDate('');
+    setTaxRate(0);
+    setNotes('');
+    toast({
+      title: "Invoice settings cleared",
+      description: "Due date, tax rate, and notes have been reset.",
+    });
+  };
+
+  const clearLineItems = () => {
+    setLineItems([{ id: '1', description: '', quantity: 1, rate: 0, amount: 0 }]);
+    toast({
+      title: "Line items cleared",
+      description: "All line items have been reset.",
+    });
+  };
+
+  const clearAll = () => {
+    clearCompanyInfo();
+    clearCustomerInfo();
+    clearInvoiceSettings();
+    clearLineItems();
+    setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
+    toast({
+      title: "All data cleared",
+      description: "Invoice has been completely reset with a new invoice number.",
+    });
+  };
 
   const addLineItem = () => {
     const newItem: LineItem = {
@@ -133,6 +246,10 @@ const Index = () => {
               <h1 className="text-2xl font-bold text-gray-900">InvoicePro</h1>
             </div>
             <div className="flex space-x-3">
+              <Button onClick={clearAll} variant="outline" size="sm" className="text-red-600 border-red-600 hover:bg-red-50">
+                <X className="h-4 w-4 mr-2" />
+                Clear All
+              </Button>
               <Button onClick={handlePrint} variant="outline" size="sm">
                 <Printer className="h-4 w-4 mr-2" />
                 Print
@@ -152,8 +269,11 @@ const Index = () => {
           <div className="lg:col-span-1 space-y-6 print:hidden">
             {/* Company Information */}
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg text-blue-900">Company Information</CardTitle>
+                <Button onClick={clearCompanyInfo} variant="ghost" size="sm" className="text-red-600 hover:text-red-800">
+                  <X className="h-4 w-4" />
+                </Button>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -229,8 +349,11 @@ const Index = () => {
 
             {/* Customer Information */}
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg text-blue-900">Bill To</CardTitle>
+                <Button onClick={clearCustomerInfo} variant="ghost" size="sm" className="text-red-600 hover:text-red-800">
+                  <X className="h-4 w-4" />
+                </Button>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -297,8 +420,11 @@ const Index = () => {
 
             {/* Invoice Settings */}
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg text-blue-900">Invoice Settings</CardTitle>
+                <Button onClick={clearInvoiceSettings} variant="ghost" size="sm" className="text-red-600 hover:text-red-800">
+                  <X className="h-4 w-4" />
+                </Button>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -385,6 +511,18 @@ const Index = () => {
 
                 {/* Line Items */}
                 <div className="mb-8">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Line Items</h3>
+                    <Button
+                      onClick={clearLineItems}
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-600 hover:text-red-800 print:hidden"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Clear Items
+                    </Button>
+                  </div>
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
@@ -496,51 +634,39 @@ const Index = () => {
         </div>
       </div>
 
-      <style jsx global>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          
-          .print\\:block {
-            display: block !important;
-          }
-          
-          .print\\:hidden {
-            display: none !important;
-          }
-          
-          .print\\:shadow-none {
-            box-shadow: none !important;
-          }
-          
-          .print\\:border-none {
-            border: none !important;
-          }
-          
-          .print\\:p-6 {
-            padding: 1.5rem !important;
-          }
-          
-          .print\\:bg-transparent {
-            background-color: transparent !important;
-          }
-          
-          ${printRef.current ? `
-            #${printRef.current.id}, 
-            #${printRef.current.id} * {
-              visibility: visible;
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @media print {
+            body * {
+              visibility: hidden;
             }
             
-            #${printRef.current.id} {
-              position: absolute;
-              left: 0;
-              top: 0;
-              width: 100%;
+            .print\\:block {
+              display: block !important;
             }
-          ` : ''}
-        }
-      `}</style>
+            
+            .print\\:hidden {
+              display: none !important;
+            }
+            
+            .print\\:shadow-none {
+              box-shadow: none !important;
+            }
+            
+            .print\\:border-none {
+              border: none !important;
+            }
+            
+            .print\\:p-6 {
+              padding: 1.5rem !important;
+            }
+            
+            .print\\:bg-transparent {
+              background-color: transparent !important;
+            }
+          }
+        `
+      }} />
     </div>
   );
 };
