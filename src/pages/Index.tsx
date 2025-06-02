@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, Printer, Download, FileText, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Footer from '@/components/Footer';
@@ -36,6 +37,22 @@ interface CustomerInfo {
   email: string;
 }
 
+interface Currency {
+  code: string;
+  symbol: string;
+  name: string;
+}
+
+const CURRENCIES: Currency[] = [
+  { code: 'PKR', symbol: 'Rs', name: 'Pakistani Rupee' },
+  { code: 'USD', symbol: '$', name: 'US Dollar' },
+  { code: 'EUR', symbol: '€', name: 'Euro' },
+  { code: 'GBP', symbol: '£', name: 'British Pound' },
+  { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
+  { code: 'SAR', symbol: 'ر.س', name: 'Saudi Riyal' },
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+];
+
 const STORAGE_KEYS = {
   COMPANY_INFO: 'invoicepro_company_info',
   CUSTOMER_INFO: 'invoicepro_customer_info',
@@ -50,6 +67,7 @@ const Index = () => {
   const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now().toString().slice(-6)}`);
   const [invoiceDate] = useState(new Date().toLocaleDateString());
   const [dueDate, setDueDate] = useState('');
+  const [currency, setCurrency] = useState<Currency>(CURRENCIES[0]); // Default to PKR
   
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
     name: '',
@@ -95,6 +113,12 @@ const Index = () => {
       setDueDate(settings.dueDate || '');
       setTaxRate(settings.taxRate || 0);
       setNotes(settings.notes || '');
+      if (settings.currency) {
+        const savedCurrency = CURRENCIES.find(c => c.code === settings.currency.code);
+        if (savedCurrency) {
+          setCurrency(savedCurrency);
+        }
+      }
     }
     if (savedLineItems) {
       setLineItems(JSON.parse(savedLineItems));
@@ -114,9 +138,10 @@ const Index = () => {
     localStorage.setItem(STORAGE_KEYS.INVOICE_SETTINGS, JSON.stringify({
       dueDate,
       taxRate,
-      notes
+      notes,
+      currency
     }));
-  }, [dueDate, taxRate, notes]);
+  }, [dueDate, taxRate, notes, currency]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.LINE_ITEMS, JSON.stringify(lineItems));
@@ -157,9 +182,10 @@ const Index = () => {
     setDueDate('');
     setTaxRate(0);
     setNotes('');
+    setCurrency(CURRENCIES[0]);
     toast({
       title: "Invoice settings cleared",
-      description: "Due date, tax rate, and notes have been reset.",
+      description: "Due date, tax rate, currency, and notes have been reset.",
     });
   };
 
@@ -428,6 +454,26 @@ const Index = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
+                  <Label htmlFor="currency">Currency</Label>
+                  <Select value={currency.code} onValueChange={(value) => {
+                    const selectedCurrency = CURRENCIES.find(c => c.code === value);
+                    if (selectedCurrency) {
+                      setCurrency(selectedCurrency);
+                    }
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CURRENCIES.map((curr) => (
+                        <SelectItem key={curr.code} value={curr.code}>
+                          {curr.symbol} - {curr.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label htmlFor="due-date">Due Date</Label>
                   <Input
                     id="due-date"
@@ -465,8 +511,8 @@ const Index = () => {
 
           {/* Right Panel - Invoice Preview */}
           <div className="lg:col-span-2">
-            <Card className="print:shadow-none print:border-none">
-              <CardContent ref={printRef} className="p-8 print:p-6">
+            <Card className="print:shadow-none print:border-none print:m-0">
+              <CardContent ref={printRef} className="p-8 print:p-0 invoice-content">
                 {/* Invoice Header */}
                 <div className="flex justify-between items-start mb-8">
                   <div>
@@ -529,8 +575,8 @@ const Index = () => {
                         <tr className="border-b-2 border-gray-200">
                           <th className="text-left py-3 text-sm font-semibold text-gray-900">Description</th>
                           <th className="text-center py-3 text-sm font-semibold text-gray-900 w-20">Qty</th>
-                          <th className="text-right py-3 text-sm font-semibold text-gray-900 w-24">Rate</th>
-                          <th className="text-right py-3 text-sm font-semibold text-gray-900 w-24">Amount</th>
+                          <th className="text-right py-3 text-sm font-semibold text-gray-900 w-24">Rate ({currency.symbol})</th>
+                          <th className="text-right py-3 text-sm font-semibold text-gray-900 w-24">Amount ({currency.symbol})</th>
                           <th className="w-10 print:hidden"></th>
                         </tr>
                       </thead>
@@ -566,7 +612,7 @@ const Index = () => {
                               />
                             </td>
                             <td className="py-3 pl-2 text-right text-sm">
-                              ${item.amount.toFixed(2)}
+                              {currency.symbol}{item.amount.toFixed(2)}
                             </td>
                             <td className="py-3 print:hidden">
                               <Button
@@ -604,18 +650,18 @@ const Index = () => {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Subtotal:</span>
-                        <span>${subtotal.toFixed(2)}</span>
+                        <span>{currency.symbol}{subtotal.toFixed(2)}</span>
                       </div>
                       {taxRate > 0 && (
                         <div className="flex justify-between text-sm">
                           <span>Tax ({taxRate}%):</span>
-                          <span>${taxAmount.toFixed(2)}</span>
+                          <span>{currency.symbol}{taxAmount.toFixed(2)}</span>
                         </div>
                       )}
                       <Separator />
                       <div className="flex justify-between font-bold text-lg">
                         <span>Total:</span>
-                        <span>${total.toFixed(2)}</span>
+                        <span>{currency.symbol}{total.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
@@ -639,12 +685,14 @@ const Index = () => {
       <style dangerouslySetInnerHTML={{
         __html: `
           @media print {
-            body * {
-              visibility: hidden;
+            * {
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
             }
             
-            .print\\:block {
-              display: block !important;
+            body {
+              margin: 0 !important;
+              padding: 0 !important;
             }
             
             .print\\:hidden {
@@ -659,12 +707,33 @@ const Index = () => {
               border: none !important;
             }
             
-            .print\\:p-6 {
-              padding: 1.5rem !important;
+            .print\\:m-0 {
+              margin: 0 !important;
+            }
+            
+            .print\\:p-0 {
+              padding: 0 !important;
             }
             
             .print\\:bg-transparent {
               background-color: transparent !important;
+            }
+            
+            .invoice-content {
+              background: white !important;
+              color: black !important;
+            }
+            
+            .invoice-content * {
+              visibility: visible !important;
+            }
+            
+            .invoice-content {
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
+              width: 100% !important;
+              height: 100% !important;
             }
           }
         `
