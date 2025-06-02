@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Menu, X, Home, Users, FileText, Package, Settings, BarChart3 } from 'lucide-react';
+import { Menu, X, Home, Users, FileText, Package, Settings, BarChart3, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -18,6 +18,7 @@ const MobileLayout = ({ children, currentPage, onNavigate }: MobileLayoutProps) 
     { name: 'Invoices', icon: FileText, key: 'invoices' },
     { name: 'Clients', icon: Users, key: 'clients' },
     { name: 'Products', icon: Package, key: 'products' },
+    { name: 'Services', icon: Briefcase, key: 'services' },
     { name: 'Analytics', icon: BarChart3, key: 'analytics' },
     { name: 'Settings', icon: Settings, key: 'settings' },
   ];

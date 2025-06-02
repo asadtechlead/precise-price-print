@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MobileLayout from '@/components/Layout/MobileLayout';
 import Dashboard from '@/components/Dashboard/Dashboard';
@@ -6,7 +5,14 @@ import ClientList from '@/components/Clients/ClientList';
 import ClientForm from '@/components/Clients/ClientForm';
 import ProductList from '@/components/Products/ProductList';
 import ProductForm from '@/components/Products/ProductForm';
-import { Client, Product, DashboardStats, Currency } from '@/types';
+import ServiceList from '@/components/Services/ServiceList';
+import ServiceForm from '@/components/Services/ServiceForm';
+import InvoiceList from '@/components/Invoices/InvoiceList';
+import InvoiceForm from '@/components/Invoices/InvoiceForm';
+import Analytics from '@/components/Analytics/Analytics';
+import Settings from '@/components/Settings/Settings';
+import { Client, Product, Service, Invoice, DashboardStats, Currency } from '@/types';
+import { sampleClients, sampleProducts, sampleServices, sampleInvoices } from '@/utils/sampleData';
 
 const CURRENCIES: Currency[] = [
   { code: 'PKR', symbol: 'Rs', name: 'Pakistani Rupee' },
@@ -17,24 +23,43 @@ const CURRENCIES: Currency[] = [
 
 const BusinessApp = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
-  const [currency] = useState<Currency>(CURRENCIES[0]); // PKR as default
-  const [clients, setClients] = useState<Client[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [currency, setCurrency] = useState<Currency>(CURRENCIES[0]); // PKR as default
+  
+  // Initialize with sample data
+  const [clients, setClients] = useState<Client[]>(sampleClients);
+  const [products, setProducts] = useState<Product[]>(sampleProducts);
+  const [services, setServices] = useState<Service[]>(sampleServices);
+  const [invoices, setInvoices] = useState<Invoice[]>(sampleInvoices);
+  
+  // Form states
   const [showClientForm, setShowClientForm] = useState(false);
   const [showProductForm, setShowProductForm] = useState(false);
+  const [showServiceForm, setShowServiceForm] = useState(false);
+  const [showInvoiceForm, setShowInvoiceForm] = useState(false);
+  
+  // Editing states
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
 
-  // Mock dashboard stats
-  const [dashboardStats] = useState<DashboardStats>({
-    totalPending: 125000,
-    totalEarned: 450000,
+  // Calculate real-time dashboard stats
+  const dashboardStats: DashboardStats = {
+    totalPending: invoices.filter(inv => inv.status === 'sent').reduce((sum, inv) => sum + inv.total, 0),
+    totalEarned: invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + inv.total, 0),
     totalClients: clients.length,
-    totalInvoices: 45,
-    overdueAmount: 25000,
-    thisMonthEarnings: 85000,
-  });
+    totalInvoices: invoices.length,
+    overdueAmount: invoices.filter(inv => inv.status === 'overdue').reduce((sum, inv) => sum + inv.total, 0),
+    thisMonthEarnings: invoices.filter(inv => {
+      const invDate = new Date(inv.createdAt);
+      const now = new Date();
+      return invDate.getMonth() === now.getMonth() && 
+             invDate.getFullYear() === now.getFullYear() &&
+             inv.status === 'paid';
+    }).reduce((sum, inv) => sum + inv.total, 0),
+  };
 
+  // Client handlers
   const handleAddClient = () => {
     setEditingClient(null);
     setShowClientForm(true);
@@ -51,14 +76,12 @@ const BusinessApp = () => {
 
   const handleSaveClient = (clientData: Omit<Client, 'id' | 'createdAt'>) => {
     if (editingClient) {
-      // Update existing client
       setClients(clients.map(client => 
         client.id === editingClient.id 
           ? { ...clientData, id: editingClient.id, createdAt: editingClient.createdAt }
           : client
       ));
     } else {
-      // Add new client
       const newClient: Client = {
         ...clientData,
         id: Date.now().toString(),
@@ -70,6 +93,7 @@ const BusinessApp = () => {
     setEditingClient(null);
   };
 
+  // Product handlers
   const handleAddProduct = () => {
     setEditingProduct(null);
     setShowProductForm(true);
@@ -86,14 +110,12 @@ const BusinessApp = () => {
 
   const handleSaveProduct = (productData: Omit<Product, 'id' | 'createdAt'>) => {
     if (editingProduct) {
-      // Update existing product
       setProducts(products.map(product => 
         product.id === editingProduct.id 
           ? { ...productData, id: editingProduct.id, createdAt: editingProduct.createdAt }
           : product
       ));
     } else {
-      // Add new product
       const newProduct: Product = {
         ...productData,
         id: Date.now().toString(),
@@ -105,7 +127,76 @@ const BusinessApp = () => {
     setEditingProduct(null);
   };
 
+  // Service handlers
+  const handleAddService = () => {
+    setEditingService(null);
+    setShowServiceForm(true);
+  };
+
+  const handleEditService = (service: Service) => {
+    setEditingService(service);
+    setShowServiceForm(true);
+  };
+
+  const handleViewService = (service: Service) => {
+    console.log('View service:', service);
+  };
+
+  const handleSaveService = (serviceData: Omit<Service, 'id' | 'createdAt'>) => {
+    if (editingService) {
+      setServices(services.map(service => 
+        service.id === editingService.id 
+          ? { ...serviceData, id: editingService.id, createdAt: editingService.createdAt }
+          : service
+      ));
+    } else {
+      const newService: Service = {
+        ...serviceData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+      };
+      setServices([...services, newService]);
+    }
+    setShowServiceForm(false);
+    setEditingService(null);
+  };
+
+  // Invoice handlers
+  const handleAddInvoice = () => {
+    setEditingInvoice(null);
+    setShowInvoiceForm(true);
+  };
+
+  const handleEditInvoice = (invoice: Invoice) => {
+    setEditingInvoice(invoice);
+    setShowInvoiceForm(true);
+  };
+
+  const handleViewInvoice = (invoice: Invoice) => {
+    console.log('View invoice:', invoice);
+  };
+
+  const handleSaveInvoice = (invoiceData: Omit<Invoice, 'id' | 'createdAt'>) => {
+    if (editingInvoice) {
+      setInvoices(invoices.map(invoice => 
+        invoice.id === editingInvoice.id 
+          ? { ...invoiceData, id: editingInvoice.id, createdAt: editingInvoice.createdAt }
+          : invoice
+      ));
+    } else {
+      const newInvoice: Invoice = {
+        ...invoiceData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+      };
+      setInvoices([...invoices, newInvoice]);
+    }
+    setShowInvoiceForm(false);
+    setEditingInvoice(null);
+  };
+
   const renderCurrentPage = () => {
+    // Form renders
     if (showClientForm) {
       return (
         <ClientForm
@@ -134,6 +225,39 @@ const BusinessApp = () => {
       );
     }
 
+    if (showServiceForm) {
+      return (
+        <ServiceForm
+          service={editingService || undefined}
+          onSave={handleSaveService}
+          onCancel={() => {
+            setShowServiceForm(false);
+            setEditingService(null);
+          }}
+          isEditing={!!editingService}
+        />
+      );
+    }
+
+    if (showInvoiceForm) {
+      return (
+        <InvoiceForm
+          invoice={editingInvoice || undefined}
+          clients={clients}
+          products={products}
+          services={services}
+          onSave={handleSaveInvoice}
+          onCancel={() => {
+            setShowInvoiceForm(false);
+            setEditingInvoice(null);
+          }}
+          isEditing={!!editingInvoice}
+          currency={currency}
+        />
+      );
+    }
+
+    // Page renders
     switch (currentPage) {
       case 'dashboard':
         return <Dashboard stats={dashboardStats} currency={currency} />;
@@ -157,12 +281,45 @@ const BusinessApp = () => {
             currency={currency}
           />
         );
+      case 'services':
+        return (
+          <ServiceList
+            services={services}
+            onAddService={handleAddService}
+            onEditService={handleEditService}
+            onViewService={handleViewService}
+            currency={currency}
+          />
+        );
       case 'invoices':
-        return <div className="p-4">Invoices page - Coming soon</div>;
+        return (
+          <InvoiceList
+            invoices={invoices}
+            clients={clients}
+            onAddInvoice={handleAddInvoice}
+            onEditInvoice={handleEditInvoice}
+            onViewInvoice={handleViewInvoice}
+            currency={currency}
+          />
+        );
       case 'analytics':
-        return <div className="p-4">Analytics page - Coming soon</div>;
+        return (
+          <Analytics
+            invoices={invoices}
+            clients={clients}
+            products={products}
+            services={services}
+            currency={currency}
+          />
+        );
       case 'settings':
-        return <div className="p-4">Settings page - Coming soon</div>;
+        return (
+          <Settings
+            currency={currency}
+            currencies={CURRENCIES}
+            onCurrencyChange={setCurrency}
+          />
+        );
       default:
         return <Dashboard stats={dashboardStats} currency={currency} />;
     }
