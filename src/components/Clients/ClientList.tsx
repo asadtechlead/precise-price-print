@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Mail, Phone, MapPin, DollarSign } from 'lucide-react';
+import { Plus, Search, Mail, Phone, MapPin, DollarSign, Users } from 'lucide-react';
 import { Client } from '@/types';
 
 interface ClientListProps {
