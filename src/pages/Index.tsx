@@ -1,7 +1,9 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, Printer, Download, FileText, X } from 'lucide-react';
+import { Plus, Trash2, Printer, Download, FileText, X, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import Footer from '@/components/Footer';
 import CompanyForm from '@/components/CompanyForm';
 import CustomerForm from '@/components/CustomerForm';
@@ -60,6 +62,7 @@ const STORAGE_KEYS = {
 
 const Index = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const printRef = useRef<HTMLDivElement>(null);
 
   const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now().toString().slice(-6)}`);
@@ -270,6 +273,15 @@ const Index = () => {
               <h1 className="text-2xl font-bold text-gray-900">InvoicePro</h1>
             </div>
             <div className="flex space-x-3">
+              <Button 
+                onClick={() => navigate('/app')} 
+                variant="default" 
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Business App
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
               <Button onClick={clearAll} variant="outline" size="sm" className="text-red-600 border-red-600 hover:bg-red-50">
                 <X className="h-4 w-4 mr-2" />
                 Clear All
