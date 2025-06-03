@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, FileText, Calendar, Eye, Edit, DollarSign } from 'lucide-react';
+import { Plus, Search, FileText, Calendar, DollarSign } from 'lucide-react';
 import { Invoice, Client } from '@/types';
+import InvoiceActions from './InvoiceActions';
 
 interface InvoiceListProps {
   invoices: Invoice[];
@@ -43,6 +44,10 @@ const InvoiceList = ({ invoices, clients, onAddInvoice, onEditInvoice, onViewInv
     return client?.name || 'Unknown Client';
   };
 
+  const getClient = (clientId: string) => {
+    return clients.find(c => c.id === clientId);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -79,53 +84,46 @@ const InvoiceList = ({ invoices, clients, onAddInvoice, onEditInvoice, onViewInv
 
       {/* Invoices Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredInvoices.map((invoice) => (
-          <Card key={invoice.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center justify-between">
-                <span className="truncate">#{invoice.invoiceNumber}</span>
-                <div className={`text-xs px-2 py-1 rounded ${getStatusColor(invoice.status)}`}>
-                  {invoice.status.toUpperCase()}
+        {filteredInvoices.map((invoice) => {
+          const client = getClient(invoice.clientId);
+          return (
+            <Card key={invoice.id} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center justify-between">
+                  <span className="truncate">#{invoice.invoiceNumber}</span>
+                  <div className={`text-xs px-2 py-1 rounded ${getStatusColor(invoice.status)}`}>
+                    {invoice.status.toUpperCase()}
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center text-sm text-gray-600">
+                  <FileText className="h-4 w-4 mr-2" />
+                  <span className="truncate">{getClientName(invoice.clientId)}</span>
                 </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center text-sm text-gray-600">
-                <FileText className="h-4 w-4 mr-2" />
-                <span className="truncate">{getClientName(invoice.clientId)}</span>
-              </div>
-              <div className="flex items-center text-sm text-gray-600">
-                <DollarSign className="h-4 w-4 mr-2" />
-                <span className="font-medium">{formatCurrency(invoice.total)}</span>
-              </div>
-              <div className="flex items-center text-sm text-gray-600">
-                <Calendar className="h-4 w-4 mr-2" />
-                <span>Due: {new Date(invoice.dueDate).toLocaleDateString()}</span>
-              </div>
-              
-              <div className="flex gap-2 pt-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => onViewInvoice(invoice)}
-                  className="flex-1"
-                >
-                  <Eye className="h-4 w-4 mr-1" />
-                  View
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => onEditInvoice(invoice)}
-                  className="flex-1"
-                >
-                  <Edit className="h-4 w-4 mr-1" />
-                  Edit
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                <div className="flex items-center text-sm text-gray-600">
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  <span className="font-medium">{formatCurrency(invoice.total)}</span>
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <span>Due: {new Date(invoice.dueDate).toLocaleDateString()}</span>
+                </div>
+                
+                <div className="pt-2">
+                  {client && (
+                    <InvoiceActions
+                      invoice={invoice}
+                      client={client}
+                      onEdit={onEditInvoice}
+                      onView={onViewInvoice}
+                    />
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {filteredInvoices.length === 0 && (
