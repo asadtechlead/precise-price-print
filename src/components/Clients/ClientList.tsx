@@ -10,11 +10,11 @@ interface ClientListProps {
   clients: Client[];
   onAddClient: () => void;
   onEditClient: (client: Client) => void;
-  onViewClient: (client: Client) => void;
+  onDeleteClient: (id: string) => void;
   currency: { symbol: string };
 }
 
-const ClientList = ({ clients, onAddClient, onEditClient, onViewClient, currency }: ClientListProps) => {
+const ClientList = ({ clients, onAddClient, onEditClient, onDeleteClient, currency }: ClientListProps) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredClients = clients.filter(client =>
@@ -77,18 +77,18 @@ const ClientList = ({ clients, onAddClient, onEditClient, onViewClient, currency
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => onViewClient(client)}
-                  className="flex-1"
-                >
-                  View
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
                   onClick={() => onEditClient(client)}
                   className="flex-1"
                 >
                   Edit
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={() => onDeleteClient(client.id)}
+                  className="flex-1"
+                >
+                  Delete
                 </Button>
               </div>
             </CardContent>

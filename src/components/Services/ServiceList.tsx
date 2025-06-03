@@ -10,11 +10,11 @@ interface ServiceListProps {
   services: Service[];
   onAddService: () => void;
   onEditService: (service: Service) => void;
-  onViewService: (service: Service) => void;
+  onDeleteService: (id: string) => void;
   currency: { symbol: string };
 }
 
-const ServiceList = ({ services, onAddService, onEditService, onViewService, currency }: ServiceListProps) => {
+const ServiceList = ({ services, onAddService, onEditService, onDeleteService, currency }: ServiceListProps) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredServices = services.filter(service =>
@@ -73,18 +73,18 @@ const ServiceList = ({ services, onAddService, onEditService, onViewService, cur
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => onViewService(service)}
-                  className="flex-1"
-                >
-                  View
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
                   onClick={() => onEditService(service)}
                   className="flex-1"
                 >
                   Edit
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={() => onDeleteService(service.id)}
+                  className="flex-1"
+                >
+                  Delete
                 </Button>
               </div>
             </CardContent>

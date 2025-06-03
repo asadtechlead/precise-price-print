@@ -1,333 +1,211 @@
+
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { dataService } from '@/services/dataService';
+import { Currency } from '@/types';
+import { useToast } from '@/hooks/use-toast';
+import { useBusinessData } from '@/hooks/useBusinessData';
+import { useFormStates } from '@/hooks/useFormStates';
+import AuthForm from '@/components/Auth/AuthForm';
 import MobileLayout from '@/components/Layout/MobileLayout';
-import Dashboard from '@/components/Dashboard/Dashboard';
-import ClientList from '@/components/Clients/ClientList';
-import ClientForm from '@/components/Clients/ClientForm';
-import ProductList from '@/components/Products/ProductList';
-import ProductForm from '@/components/Products/ProductForm';
-import ServiceList from '@/components/Services/ServiceList';
-import ServiceForm from '@/components/Services/ServiceForm';
-import InvoiceList from '@/components/Invoices/InvoiceList';
-import InvoiceForm from '@/components/Invoices/InvoiceForm';
-import Analytics from '@/components/Analytics/Analytics';
-import Settings from '@/components/Settings/Settings';
-import { Client, Product, Service, Invoice, DashboardStats, Currency } from '@/types';
-import { sampleClients, sampleProducts, sampleServices, sampleInvoices } from '@/utils/sampleData';
+import BusinessAppContent from '@/components/BusinessApp/BusinessAppContent';
 
 const CURRENCIES: Currency[] = [
   { code: 'PKR', symbol: 'Rs', name: 'Pakistani Rupee' },
   { code: 'USD', symbol: '$', name: 'US Dollar' },
   { code: 'EUR', symbol: '€', name: 'Euro' },
   { code: 'GBP', symbol: '£', name: 'British Pound' },
+  { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
+  { code: 'SAR', symbol: 'ر.س', name: 'Saudi Riyal' },
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
 ];
 
 const BusinessApp = () => {
+  const { user, loading } = useAuth();
+  const { toast } = useToast();
+  
   const [currentPage, setCurrentPage] = useState('dashboard');
-  const [currency, setCurrency] = useState<Currency>(CURRENCIES[0]); // PKR as default
-  
-  // Initialize with sample data
-  const [clients, setClients] = useState<Client[]>(sampleClients);
-  const [products, setProducts] = useState<Product[]>(sampleProducts);
-  const [services, setServices] = useState<Service[]>(sampleServices);
-  const [invoices, setInvoices] = useState<Invoice[]>(sampleInvoices);
-  
-  // Form states
-  const [showClientForm, setShowClientForm] = useState(false);
-  const [showProductForm, setShowProductForm] = useState(false);
-  const [showServiceForm, setShowServiceForm] = useState(false);
-  const [showInvoiceForm, setShowInvoiceForm] = useState(false);
-  
-  // Editing states
-  const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [editingService, setEditingService] = useState<Service | null>(null);
-  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [currency, setCurrency] = useState<Currency>(CURRENCIES[0]);
 
-  // Calculate real-time dashboard stats
-  const dashboardStats: DashboardStats = {
-    totalPending: invoices.filter(inv => inv.status === 'sent').reduce((sum, inv) => sum + inv.total, 0),
-    totalEarned: invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + inv.total, 0),
-    totalClients: clients.length,
-    totalInvoices: invoices.length,
-    overdueAmount: invoices.filter(inv => inv.status === 'overdue').reduce((sum, inv) => sum + inv.total, 0),
-    thisMonthEarnings: invoices.filter(inv => {
-      const invDate = new Date(inv.createdAt);
-      const now = new Date();
-      return invDate.getMonth() === now.getMonth() && 
-             invDate.getFullYear() === now.getFullYear() &&
-             inv.status === 'paid';
-    }).reduce((sum, inv) => sum + inv.total, 0),
+  // Use custom hooks for data and form state management
+  const businessData = useBusinessData({ user, loading });
+  const formStates = useFormStates();
+
+  // Load currency from localStorage
+  useEffect(() => {
+    const savedCurrency = localStorage.getItem('invoicepro_currency');
+    if (savedCurrency) {
+      const currencyData = JSON.parse(savedCurrency);
+      const foundCurrency = CURRENCIES.find(c => c.code === currencyData.code);
+      if (foundCurrency) {
+        setCurrency(foundCurrency);
+      }
+    }
+  }, []);
+
+  // Save currency to localStorage
+  useEffect(() => {
+    localStorage.setItem('invoicepro_currency', JSON.stringify(currency));
+  }, [currency]);
+
+  // Show auth form if not authenticated
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  if (!user) {
+    return <AuthForm />;
+  }
+
+  const handleSaveInvoice = async (invoiceData: any) => {
+    try {
+      if (formStates.editingInvoice) {
+        const updatedInvoice = await dataService.updateInvoice(formStates.editingInvoice.id, invoiceData, user.id);
+        businessData.setInvoices(businessData.invoices.map(i => i.id === formStates.editingInvoice.id ? updatedInvoice : i));
+        toast({ title: "Invoice updated successfully" });
+      } else {
+        const newInvoice = await dataService.createInvoice(invoiceData, user.id);
+        businessData.setInvoices([...businessData.invoices, newInvoice]);
+        toast({ title: "Invoice created successfully" });
+      }
+      formStates.setIsInvoiceFormOpen(false);
+      formStates.setEditingInvoice(undefined);
+    } catch (error) {
+      toast({ title: "Error saving invoice", variant: "destructive" });
+    }
+  };
+
+  const handleCancelInvoice = () => {
+    formStates.setIsInvoiceFormOpen(false);
+    formStates.setEditingInvoice(undefined);
+  };
+
+  const handleCurrencyChange = (currency: Currency) => {
+    setCurrency(currency);
+  };
+
+  const handleNavigate = (page: string) => {
+    setCurrentPage(page);
   };
 
   // Client handlers
-  const handleAddClient = () => {
-    setEditingClient(null);
-    setShowClientForm(true);
-  };
-
-  const handleEditClient = (client: Client) => {
-    setEditingClient(client);
-    setShowClientForm(true);
-  };
-
-  const handleViewClient = (client: Client) => {
-    console.log('View client:', client);
-  };
-
-  const handleSaveClient = (clientData: Omit<Client, 'id' | 'createdAt'>) => {
-    if (editingClient) {
-      setClients(clients.map(client => 
-        client.id === editingClient.id 
-          ? { ...clientData, id: editingClient.id, createdAt: editingClient.createdAt }
-          : client
-      ));
-    } else {
-      const newClient: Client = {
-        ...clientData,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-      };
-      setClients([...clients, newClient]);
+  const handleClientSave = async (clientData: any) => {
+    try {
+      if (formStates.editingClient) {
+        const updatedClient = await dataService.updateClient(formStates.editingClient.id, clientData, user.id);
+        businessData.setClients(businessData.clients.map(c => c.id === formStates.editingClient.id ? updatedClient : c));
+        toast({ title: "Client updated successfully" });
+      } else {
+        const newClient = await dataService.createClient(clientData, user.id);
+        businessData.setClients([...businessData.clients, newClient]);
+        toast({ title: "Client created successfully" });
+      }
+      formStates.setIsClientFormOpen(false);
+      formStates.setEditingClient(undefined);
+    } catch (error) {
+      toast({ title: "Error saving client", variant: "destructive" });
     }
-    setShowClientForm(false);
-    setEditingClient(null);
+  };
+
+  const handleClientCancel = () => {
+    formStates.setIsClientFormOpen(false);
+    formStates.setEditingClient(undefined);
   };
 
   // Product handlers
-  const handleAddProduct = () => {
-    setEditingProduct(null);
-    setShowProductForm(true);
-  };
-
-  const handleEditProduct = (product: Product) => {
-    setEditingProduct(product);
-    setShowProductForm(true);
-  };
-
-  const handleViewProduct = (product: Product) => {
-    console.log('View product:', product);
-  };
-
-  const handleSaveProduct = (productData: Omit<Product, 'id' | 'createdAt'>) => {
-    if (editingProduct) {
-      setProducts(products.map(product => 
-        product.id === editingProduct.id 
-          ? { ...productData, id: editingProduct.id, createdAt: editingProduct.createdAt }
-          : product
-      ));
-    } else {
-      const newProduct: Product = {
-        ...productData,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-      };
-      setProducts([...products, newProduct]);
+  const handleProductSave = async (productData: any) => {
+    try {
+      if (formStates.editingProduct) {
+        const updatedProduct = await dataService.updateProduct(formStates.editingProduct.id, productData, user.id);
+        businessData.setProducts(businessData.products.map(p => p.id === formStates.editingProduct.id ? updatedProduct : p));
+        toast({ title: "Product updated successfully" });
+      } else {
+        const newProduct = await dataService.createProduct(productData, user.id);
+        businessData.setProducts([...businessData.products, newProduct]);
+        toast({ title: "Product created successfully" });
+      }
+      formStates.setIsProductFormOpen(false);
+      formStates.setEditingProduct(undefined);
+    } catch (error) {
+      toast({ title: "Error saving product", variant: "destructive" });
     }
-    setShowProductForm(false);
-    setEditingProduct(null);
+  };
+
+  const handleProductCancel = () => {
+    formStates.setIsProductFormOpen(false);
+    formStates.setEditingProduct(undefined);
   };
 
   // Service handlers
-  const handleAddService = () => {
-    setEditingService(null);
-    setShowServiceForm(true);
-  };
-
-  const handleEditService = (service: Service) => {
-    setEditingService(service);
-    setShowServiceForm(true);
-  };
-
-  const handleViewService = (service: Service) => {
-    console.log('View service:', service);
-  };
-
-  const handleSaveService = (serviceData: Omit<Service, 'id' | 'createdAt'>) => {
-    if (editingService) {
-      setServices(services.map(service => 
-        service.id === editingService.id 
-          ? { ...serviceData, id: editingService.id, createdAt: editingService.createdAt }
-          : service
-      ));
-    } else {
-      const newService: Service = {
-        ...serviceData,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-      };
-      setServices([...services, newService]);
+  const handleServiceSave = async (serviceData: any) => {
+    try {
+      if (formStates.editingService) {
+        const updatedService = await dataService.updateService(formStates.editingService.id, serviceData, user.id);
+        businessData.setServices(businessData.services.map(s => s.id === formStates.editingService.id ? updatedService : s));
+        toast({ title: "Service updated successfully" });
+      } else {
+        const newService = await dataService.createService(serviceData, user.id);
+        businessData.setServices([...businessData.services, newService]);
+        toast({ title: "Service created successfully" });
+      }
+      formStates.setIsServiceFormOpen(false);
+      formStates.setEditingService(undefined);
+    } catch (error) {
+      toast({ title: "Error saving service", variant: "destructive" });
     }
-    setShowServiceForm(false);
-    setEditingService(null);
   };
 
-  // Invoice handlers
-  const handleAddInvoice = () => {
-    setEditingInvoice(null);
-    setShowInvoiceForm(true);
-  };
-
-  const handleEditInvoice = (invoice: Invoice) => {
-    setEditingInvoice(invoice);
-    setShowInvoiceForm(true);
-  };
-
-  const handleViewInvoice = (invoice: Invoice) => {
-    console.log('View invoice:', invoice);
-  };
-
-  const handleSaveInvoice = (invoiceData: Omit<Invoice, 'id' | 'createdAt'>) => {
-    if (editingInvoice) {
-      setInvoices(invoices.map(invoice => 
-        invoice.id === editingInvoice.id 
-          ? { ...invoiceData, id: editingInvoice.id, createdAt: editingInvoice.createdAt }
-          : invoice
-      ));
-    } else {
-      const newInvoice: Invoice = {
-        ...invoiceData,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-      };
-      setInvoices([...invoices, newInvoice]);
-    }
-    setShowInvoiceForm(false);
-    setEditingInvoice(null);
-  };
-
-  const renderCurrentPage = () => {
-    // Form renders
-    if (showClientForm) {
-      return (
-        <ClientForm
-          client={editingClient || undefined}
-          onSave={handleSaveClient}
-          onCancel={() => {
-            setShowClientForm(false);
-            setEditingClient(null);
-          }}
-          isEditing={!!editingClient}
-        />
-      );
-    }
-
-    if (showProductForm) {
-      return (
-        <ProductForm
-          product={editingProduct || undefined}
-          onSave={handleSaveProduct}
-          onCancel={() => {
-            setShowProductForm(false);
-            setEditingProduct(null);
-          }}
-          isEditing={!!editingProduct}
-        />
-      );
-    }
-
-    if (showServiceForm) {
-      return (
-        <ServiceForm
-          service={editingService || undefined}
-          onSave={handleSaveService}
-          onCancel={() => {
-            setShowServiceForm(false);
-            setEditingService(null);
-          }}
-          isEditing={!!editingService}
-        />
-      );
-    }
-
-    if (showInvoiceForm) {
-      return (
-        <InvoiceForm
-          invoice={editingInvoice || undefined}
-          clients={clients}
-          products={products}
-          services={services}
-          onSave={handleSaveInvoice}
-          onCancel={() => {
-            setShowInvoiceForm(false);
-            setEditingInvoice(null);
-          }}
-          isEditing={!!editingInvoice}
-          currency={currency}
-        />
-      );
-    }
-
-    // Page renders
-    switch (currentPage) {
-      case 'dashboard':
-        return <Dashboard stats={dashboardStats} currency={currency} />;
-      case 'clients':
-        return (
-          <ClientList
-            clients={clients}
-            onAddClient={handleAddClient}
-            onEditClient={handleEditClient}
-            onViewClient={handleViewClient}
-            currency={currency}
-          />
-        );
-      case 'products':
-        return (
-          <ProductList
-            products={products}
-            onAddProduct={handleAddProduct}
-            onEditProduct={handleEditProduct}
-            onViewProduct={handleViewProduct}
-            currency={currency}
-          />
-        );
-      case 'services':
-        return (
-          <ServiceList
-            services={services}
-            onAddService={handleAddService}
-            onEditService={handleEditService}
-            onViewService={handleViewService}
-            currency={currency}
-          />
-        );
-      case 'invoices':
-        return (
-          <InvoiceList
-            invoices={invoices}
-            clients={clients}
-            onAddInvoice={handleAddInvoice}
-            onEditInvoice={handleEditInvoice}
-            onViewInvoice={handleViewInvoice}
-            currency={currency}
-          />
-        );
-      case 'analytics':
-        return (
-          <Analytics
-            invoices={invoices}
-            clients={clients}
-            products={products}
-            services={services}
-            currency={currency}
-          />
-        );
-      case 'settings':
-        return (
-          <Settings
-            currency={currency}
-            currencies={CURRENCIES}
-            onCurrencyChange={setCurrency}
-          />
-        );
-      default:
-        return <Dashboard stats={dashboardStats} currency={currency} />;
-    }
+  const handleServiceCancel = () => {
+    formStates.setIsServiceFormOpen(false);
+    formStates.setEditingService(undefined);
   };
 
   return (
-    <MobileLayout currentPage={currentPage} onNavigate={setCurrentPage}>
-      {renderCurrentPage()}
+    <MobileLayout currentPage={currentPage} onNavigate={handleNavigate}>
+      <BusinessAppContent
+        currentPage={currentPage}
+        currency={currency}
+        currencies={CURRENCIES}
+        clients={businessData.clients}
+        products={businessData.products}
+        services={businessData.services}
+        invoices={businessData.invoices}
+        calculateDashboardStats={businessData.calculateDashboardStats}
+        isClientFormOpen={formStates.isClientFormOpen}
+        isProductFormOpen={formStates.isProductFormOpen}
+        isServiceFormOpen={formStates.isServiceFormOpen}
+        isInvoiceFormOpen={formStates.isInvoiceFormOpen}
+        editingClient={formStates.editingClient}
+        editingProduct={formStates.editingProduct}
+        editingService={formStates.editingService}
+        editingInvoice={formStates.editingInvoice}
+        user={user}
+        onCurrencyChange={handleCurrencyChange}
+        onClientSave={handleClientSave}
+        onClientCancel={handleClientCancel}
+        onProductSave={handleProductSave}
+        onProductCancel={handleProductCancel}
+        onServiceSave={handleServiceSave}
+        onServiceCancel={handleServiceCancel}
+        onInvoiceSave={handleSaveInvoice}
+        onInvoiceCancel={handleCancelInvoice}
+        onClientAdd={formStates.handleCreateClient}
+        onClientEdit={formStates.handleEditClient}
+        onClientDelete={businessData.handleDeleteClient}
+        onProductAdd={formStates.handleCreateProduct}
+        onProductEdit={formStates.handleEditProduct}
+        onProductDelete={businessData.handleDeleteProduct}
+        onServiceAdd={formStates.handleCreateService}
+        onServiceEdit={formStates.handleEditService}
+        onServiceDelete={businessData.handleDeleteService}
+        onInvoiceAdd={formStates.handleCreateInvoice}
+        onInvoiceEdit={formStates.handleEditInvoice}
+        onInvoiceView={formStates.handleViewInvoice}
+        onAICreateClient={businessData.handleAICreateClient}
+        onAICreateProduct={businessData.handleAICreateProduct}
+        onAICreateService={businessData.handleAICreateService}
+        onAICreateInvoice={businessData.handleAICreateInvoice}
+      />
     </MobileLayout>
   );
 };
