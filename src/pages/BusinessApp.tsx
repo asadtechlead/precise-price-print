@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { dataService } from '@/services/dataService';
 import { sampleClients, sampleProducts, sampleServices, sampleInvoices } from '@/utils/sampleData';
-import { Client, Product, Service, Invoice, Currency } from '@/types';
+import { Client, Product, Service, Invoice, Currency, DashboardStats } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import AuthForm from '@/components/Auth/AuthForm';
 import MobileLayout from '@/components/Layout/MobileLayout';
@@ -52,6 +52,41 @@ const BusinessApp = () => {
   const [editingService, setEditingService] = useState<Service | undefined>();
   const [editingInvoice, setEditingInvoice] = useState<Invoice | undefined>();
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | undefined>();
+
+  // Calculate dashboard statistics
+  const calculateDashboardStats = (): DashboardStats => {
+    const totalPending = invoices
+      .filter(invoice => invoice.status === 'sent' || invoice.status === 'overdue')
+      .reduce((sum, invoice) => sum + invoice.total, 0);
+
+    const totalEarned = invoices
+      .filter(invoice => invoice.status === 'paid')
+      .reduce((sum, invoice) => sum + invoice.total, 0);
+
+    const overdueAmount = invoices
+      .filter(invoice => invoice.status === 'overdue')
+      .reduce((sum, invoice) => sum + invoice.total, 0);
+
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    
+    const thisMonthEarnings = invoices
+      .filter(invoice => {
+        if (invoice.status !== 'paid' || !invoice.paidAt) return false;
+        const paidDate = new Date(invoice.paidAt);
+        return paidDate.getMonth() === currentMonth && paidDate.getFullYear() === currentYear;
+      })
+      .reduce((sum, invoice) => sum + invoice.total, 0);
+
+    return {
+      totalPending,
+      totalEarned,
+      totalClients: clients.length,
+      totalInvoices: invoices.length,
+      overdueAmount,
+      thisMonthEarnings,
+    };
+  };
 
   // Load data from localStorage or sample data when user changes
   useEffect(() => {
@@ -405,7 +440,7 @@ const BusinessApp = () => {
 
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard clients={clients} products={products} services={services} invoices={invoices} currency={currency} />;
+        return <Dashboard stats={calculateDashboardStats()} currency={currency} />;
       case 'clients':
         return (
           <ClientList
@@ -472,7 +507,7 @@ const BusinessApp = () => {
       case 'settings':
         return <Settings currency={currency} currencies={CURRENCIES} onCurrencyChange={handleCurrencyChange} />;
       default:
-        return <Dashboard clients={clients} products={products} services={services} invoices={invoices} currency={currency} />;
+        return <Dashboard stats={calculateDashboardStats()} currency={currency} />;
     }
   };
 
