@@ -17,6 +17,7 @@ import InvoiceList from '@/components/Invoices/InvoiceList';
 import InvoiceForm from '@/components/Invoices/InvoiceForm';
 import Analytics from '@/components/Analytics/Analytics';
 import Settings from '@/components/Settings/Settings';
+import AIAssistant from '@/components/AI/AIAssistant';
 
 const CURRENCIES: Currency[] = [
   { code: 'PKR', symbol: 'Rs', name: 'Pakistani Rupee' },
@@ -259,6 +260,43 @@ const BusinessApp = () => {
     setCurrentPage(page);
   };
 
+  // AI Assistant handlers
+  const handleAICreateClient = async (clientData: Omit<Client, 'id' | 'createdAt'>) => {
+    try {
+      const newClient = await dataService.createClient(clientData, user.id);
+      setClients([...clients, newClient]);
+    } catch (error) {
+      console.error('Error creating client:', error);
+    }
+  };
+
+  const handleAICreateProduct = async (productData: Omit<Product, 'id' | 'createdAt'>) => {
+    try {
+      const newProduct = await dataService.createProduct(productData, user.id);
+      setProducts([...products, newProduct]);
+    } catch (error) {
+      console.error('Error creating product:', error);
+    }
+  };
+
+  const handleAICreateService = async (serviceData: Omit<Service, 'id' | 'createdAt'>) => {
+    try {
+      const newService = await dataService.createService(serviceData, user.id);
+      setServices([...services, newService]);
+    } catch (error) {
+      console.error('Error creating service:', error);
+    }
+  };
+
+  const handleAICreateInvoice = async (invoiceData: Omit<Invoice, 'id' | 'createdAt'>) => {
+    try {
+      const newInvoice = await dataService.createInvoice(invoiceData, user.id);
+      setInvoices([...invoices, newInvoice]);
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+    }
+  };
+
   const renderCurrentPage = () => {
     if (isClientFormOpen) {
       return (
@@ -377,15 +415,7 @@ const BusinessApp = () => {
               setEditingClient(client);
               setIsClientFormOpen(true);
             }}
-            onDeleteClient={async (id) => {
-              try {
-                await dataService.deleteClient(id, user.id);
-                setClients(clients.filter(c => c.id !== id));
-                toast({ title: "Client deleted successfully" });
-              } catch (error) {
-                toast({ title: "Error deleting client", variant: "destructive" });
-              }
-            }}
+            onDeleteClient={handleDeleteClient}
             currency={currency}
           />
         );
@@ -398,15 +428,7 @@ const BusinessApp = () => {
               setEditingProduct(product);
               setIsProductFormOpen(true);
             }}
-            onDeleteProduct={async (id) => {
-              try {
-                await dataService.deleteProduct(id, user.id);
-                setProducts(products.filter(p => p.id !== id));
-                toast({ title: "Product deleted successfully" });
-              } catch (error) {
-                toast({ title: "Error deleting product", variant: "destructive" });
-              }
-            }}
+            onDeleteProduct={handleDeleteProduct}
             currency={currency}
           />
         );
@@ -419,15 +441,7 @@ const BusinessApp = () => {
               setEditingService(service);
               setIsServiceFormOpen(true);
             }}
-            onDeleteService={async (id) => {
-              try {
-                await dataService.deleteService(id, user.id);
-                setServices(services.filter(s => s.id !== id));
-                toast({ title: "Service deleted successfully" });
-              } catch (error) {
-                toast({ title: "Error deleting service", variant: "destructive" });
-              }
-            }}
+            onDeleteService={handleDeleteService}
             currency={currency}
           />
         );
@@ -443,7 +457,18 @@ const BusinessApp = () => {
           />
         );
       case 'analytics':
-        return <Analytics invoices={invoices} clients={clients} currency={currency} />;
+        return <Analytics invoices={invoices} clients={clients} products={products} services={services} currency={currency} />;
+      case 'ai-assistant':
+        return (
+          <AIAssistant
+            onCreateClient={handleAICreateClient}
+            onCreateProduct={handleAICreateProduct}
+            onCreateService={handleAICreateService}
+            onCreateInvoice={handleAICreateInvoice}
+            clients={clients}
+            currency={currency}
+          />
+        );
       case 'settings':
         return <Settings currency={currency} currencies={CURRENCIES} onCurrencyChange={handleCurrencyChange} />;
       default:

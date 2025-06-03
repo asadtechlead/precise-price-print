@@ -10,11 +10,11 @@ interface ProductListProps {
   products: Product[];
   onAddProduct: () => void;
   onEditProduct: (product: Product) => void;
-  onViewProduct: (product: Product) => void;
+  onDeleteProduct: (id: string) => void;
   currency: { symbol: string };
 }
 
-const ProductList = ({ products, onAddProduct, onEditProduct, onViewProduct, currency }: ProductListProps) => {
+const ProductList = ({ products, onAddProduct, onEditProduct, onDeleteProduct, currency }: ProductListProps) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredProducts = products.filter(product =>
@@ -79,18 +79,18 @@ const ProductList = ({ products, onAddProduct, onEditProduct, onViewProduct, cur
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => onViewProduct(product)}
-                  className="flex-1"
-                >
-                  View
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
                   onClick={() => onEditProduct(product)}
                   className="flex-1"
                 >
                   Edit
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={() => onDeleteProduct(product.id)}
+                  className="flex-1"
+                >
+                  Delete
                 </Button>
               </div>
             </CardContent>
