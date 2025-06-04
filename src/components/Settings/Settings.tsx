@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Save, Building, DollarSign, Bell, Shield, Palette } from 'lucide-react';
 import { Currency } from '@/types';
+import { useAuth } from '@/hooks/useAuth';
+import { userSettingsService, UserSettings } from '@/services/userSettingsService';
+import { useToast } from '@/hooks/use-toast';
 
 interface SettingsProps {
   currency: Currency;
@@ -17,8 +20,12 @@ interface SettingsProps {
 }
 
 const Settings = ({ currency, currencies, onCurrencyChange }: SettingsProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
+  const [loading, setLoading] = useState(false);
   const [companyInfo, setCompanyInfo] = useState({
-    name: 'Your Business Name',
+    name: '',
     address: '',
     city: '',
     state: '',
@@ -50,25 +57,160 @@ const Settings = ({ currency, currencies, onCurrencyChange }: SettingsProps) => 
     invoiceTemplate: 'modern',
   });
 
+  // Load user settings when component mounts
+  useEffect(() => {
+    const loadUserSettings = async () => {
+      if (!user) return;
+
+      try {
+        setLoading(true);
+        const settings = await userSettingsService.getUserSettings(user.id);
+        
+        if (settings) {
+          // Update company info
+          setCompanyInfo({
+            name: settings.company_name || '',
+            address: settings.company_address || '',
+            city: settings.company_city || '',
+            state: settings.company_state || '',
+            zip: settings.company_zip || '',
+            phone: settings.company_phone || '',
+            email: settings.company_email || '',
+            website: settings.company_website || '',
+            taxId: settings.company_tax_id || '',
+          });
+
+          // Update invoice settings
+          setInvoiceSettings({
+            defaultTaxRate: settings.default_tax_rate || 0,
+            defaultDueDays: settings.default_due_days || 30,
+            invoicePrefix: settings.invoice_prefix || 'INV',
+            paymentTerms: settings.payment_terms || 'Net 30',
+            footerText: settings.footer_text || 'Thank you for your business!',
+          });
+
+          // Update notifications
+          setNotifications({
+            emailReminders: settings.email_reminders ?? true,
+            overdueAlerts: settings.overdue_alerts ?? true,
+            paymentReceived: settings.payment_received ?? true,
+            newInvoice: settings.new_invoice ?? false,
+          });
+
+          // Update appearance
+          setAppearance({
+            theme: settings.theme || 'light',
+            primaryColor: settings.primary_color || '#3B82F6',
+            invoiceTemplate: settings.invoice_template || 'modern',
+          });
+
+          // Update currency if different
+          if (settings.default_currency_code && settings.default_currency_code !== currency.code) {
+            const foundCurrency = currencies.find(c => c.code === settings.default_currency_code);
+            if (foundCurrency) {
+              onCurrencyChange(foundCurrency);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading user settings:', error);
+        toast({
+          title: "Error loading settings",
+          description: "Failed to load your settings. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserSettings();
+  }, [user, currencies, currency.code, onCurrencyChange, toast]);
+
+  const saveSettings = async (settingsData: Partial<UserSettings>) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to save settings.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await userSettingsService.upsertUserSettings({
+        user_id: user.id,
+        ...settingsData,
+      });
+      toast({
+        title: "Settings saved",
+        description: "Your settings have been saved successfully.",
+      });
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast({
+        title: "Error saving settings",
+        description: "Failed to save your settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSaveCompanyInfo = () => {
-    console.log('Saving company info:', companyInfo);
-    // In a real app, this would save to database
+    saveSettings({
+      company_name: companyInfo.name,
+      company_address: companyInfo.address,
+      company_city: companyInfo.city,
+      company_state: companyInfo.state,
+      company_zip: companyInfo.zip,
+      company_phone: companyInfo.phone,
+      company_email: companyInfo.email,
+      company_website: companyInfo.website,
+      company_tax_id: companyInfo.taxId,
+    });
   };
 
   const handleSaveInvoiceSettings = () => {
-    console.log('Saving invoice settings:', invoiceSettings);
-    // In a real app, this would save to database
+    saveSettings({
+      default_tax_rate: invoiceSettings.defaultTaxRate,
+      default_due_days: invoiceSettings.defaultDueDays,
+      invoice_prefix: invoiceSettings.invoicePrefix,
+      payment_terms: invoiceSettings.paymentTerms,
+      footer_text: invoiceSettings.footerText,
+      default_currency_code: currency.code,
+    });
   };
 
   const handleSaveNotifications = () => {
-    console.log('Saving notification settings:', notifications);
-    // In a real app, this would save to database
+    saveSettings({
+      email_reminders: notifications.emailReminders,
+      overdue_alerts: notifications.overdueAlerts,
+      payment_received: notifications.paymentReceived,
+      new_invoice: notifications.newInvoice,
+    });
   };
 
   const handleSaveAppearance = () => {
-    console.log('Saving appearance settings:', appearance);
-    // In a real app, this would save to database
+    saveSettings({
+      theme: appearance.theme,
+      primary_color: appearance.primaryColor,
+      invoice_template: appearance.invoiceTemplate,
+    });
   };
+
+  if (loading && !companyInfo.name) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+          <p className="text-sm text-gray-500 mt-1 sm:mt-0">Loading settings...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -169,7 +311,7 @@ const Settings = ({ currency, currencies, onCurrencyChange }: SettingsProps) => 
             />
           </div>
           
-          <Button onClick={handleSaveCompanyInfo} className="w-full md:w-auto">
+          <Button onClick={handleSaveCompanyInfo} disabled={loading} className="w-full md:w-auto">
             <Save className="h-4 w-4 mr-2" />
             Save Company Information
           </Button>
@@ -261,7 +403,7 @@ const Settings = ({ currency, currencies, onCurrencyChange }: SettingsProps) => 
             />
           </div>
           
-          <Button onClick={handleSaveInvoiceSettings} className="w-full md:w-auto">
+          <Button onClick={handleSaveInvoiceSettings} disabled={loading} className="w-full md:w-auto">
             <Save className="h-4 w-4 mr-2" />
             Save Invoice Settings
           </Button>
@@ -323,7 +465,7 @@ const Settings = ({ currency, currencies, onCurrencyChange }: SettingsProps) => 
             </div>
           </div>
           
-          <Button onClick={handleSaveNotifications} className="w-full md:w-auto">
+          <Button onClick={handleSaveNotifications} disabled={loading} className="w-full md:w-auto">
             <Save className="h-4 w-4 mr-2" />
             Save Notification Settings
           </Button>
@@ -374,7 +516,7 @@ const Settings = ({ currency, currencies, onCurrencyChange }: SettingsProps) => 
             </div>
           </div>
           
-          <Button onClick={handleSaveAppearance} className="w-full md:w-auto">
+          <Button onClick={handleSaveAppearance} disabled={loading} className="w-full md:w-auto">
             <Save className="h-4 w-4 mr-2" />
             Save Appearance Settings
           </Button>

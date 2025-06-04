@@ -1,6 +1,22 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { Client, Product, Service, Invoice } from '@/types';
+import { Client, Product, Service, Invoice, InvoiceItem } from '@/types';
+
+// Helper function to safely cast Json to InvoiceItem[]
+const parseInvoiceItems = (items: any): InvoiceItem[] => {
+  if (!items) return [];
+  if (!Array.isArray(items)) return [];
+  
+  return items.map(item => ({
+    id: item.id || '',
+    type: item.type || 'product',
+    productId: item.productId,
+    serviceId: item.serviceId,
+    description: item.description || '',
+    quantity: Number(item.quantity) || 0,
+    rate: Number(item.rate) || 0,
+    amount: Number(item.amount) || 0
+  }));
+};
 
 class DataService {
   // Clients
@@ -358,7 +374,7 @@ class DataService {
       id: item.id,
       invoiceNumber: item.invoice_number,
       clientId: item.client_id,
-      items: Array.isArray(item.items) ? item.items : [],
+      items: parseInvoiceItems(item.items),
       subtotal: Number(item.subtotal),
       taxRate: Number(item.tax_rate),
       taxAmount: Number(item.tax_amount),
@@ -378,7 +394,7 @@ class DataService {
       .insert([{ 
         invoice_number: invoice.invoiceNumber,
         client_id: invoice.clientId,
-        items: invoice.items,
+        items: invoice.items as any, // Cast to any for Json compatibility
         subtotal: invoice.subtotal,
         tax_rate: invoice.taxRate,
         tax_amount: invoice.taxAmount,
@@ -403,7 +419,7 @@ class DataService {
       id: data.id,
       invoiceNumber: data.invoice_number,
       clientId: data.client_id,
-      items: Array.isArray(data.items) ? data.items : [],
+      items: parseInvoiceItems(data.items),
       subtotal: Number(data.subtotal),
       taxRate: Number(data.tax_rate),
       taxAmount: Number(data.tax_amount),
@@ -422,7 +438,7 @@ class DataService {
     
     if (invoice.invoiceNumber !== undefined) updateData.invoice_number = invoice.invoiceNumber;
     if (invoice.clientId !== undefined) updateData.client_id = invoice.clientId;
-    if (invoice.items !== undefined) updateData.items = invoice.items;
+    if (invoice.items !== undefined) updateData.items = invoice.items as any; // Cast to any for Json compatibility
     if (invoice.subtotal !== undefined) updateData.subtotal = invoice.subtotal;
     if (invoice.taxRate !== undefined) updateData.tax_rate = invoice.taxRate;
     if (invoice.taxAmount !== undefined) updateData.tax_amount = invoice.taxAmount;
@@ -450,7 +466,7 @@ class DataService {
       id: data.id,
       invoiceNumber: data.invoice_number,
       clientId: data.client_id,
-      items: Array.isArray(data.items) ? data.items : [],
+      items: parseInvoiceItems(data.items),
       subtotal: Number(data.subtotal),
       taxRate: Number(data.tax_rate),
       taxAmount: Number(data.tax_amount),

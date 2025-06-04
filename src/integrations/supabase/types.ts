@@ -179,6 +179,93 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings: {
+        Row: {
+          company_address: string | null
+          company_city: string | null
+          company_email: string | null
+          company_name: string | null
+          company_phone: string | null
+          company_state: string | null
+          company_tax_id: string | null
+          company_website: string | null
+          company_zip: string | null
+          created_at: string
+          default_currency_code: string | null
+          default_due_days: number | null
+          default_tax_rate: number | null
+          email_reminders: boolean | null
+          footer_text: string | null
+          id: string
+          invoice_prefix: string | null
+          invoice_template: string | null
+          new_invoice: boolean | null
+          overdue_alerts: boolean | null
+          payment_received: boolean | null
+          payment_terms: string | null
+          primary_color: string | null
+          theme: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_address?: string | null
+          company_city?: string | null
+          company_email?: string | null
+          company_name?: string | null
+          company_phone?: string | null
+          company_state?: string | null
+          company_tax_id?: string | null
+          company_website?: string | null
+          company_zip?: string | null
+          created_at?: string
+          default_currency_code?: string | null
+          default_due_days?: number | null
+          default_tax_rate?: number | null
+          email_reminders?: boolean | null
+          footer_text?: string | null
+          id?: string
+          invoice_prefix?: string | null
+          invoice_template?: string | null
+          new_invoice?: boolean | null
+          overdue_alerts?: boolean | null
+          payment_received?: boolean | null
+          payment_terms?: string | null
+          primary_color?: string | null
+          theme?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_address?: string | null
+          company_city?: string | null
+          company_email?: string | null
+          company_name?: string | null
+          company_phone?: string | null
+          company_state?: string | null
+          company_tax_id?: string | null
+          company_website?: string | null
+          company_zip?: string | null
+          created_at?: string
+          default_currency_code?: string | null
+          default_due_days?: number | null
+          default_tax_rate?: number | null
+          email_reminders?: boolean | null
+          footer_text?: string | null
+          id?: string
+          invoice_prefix?: string | null
+          invoice_template?: string | null
+          new_invoice?: boolean | null
+          overdue_alerts?: boolean | null
+          payment_received?: boolean | null
+          payment_terms?: string | null
+          primary_color?: string | null
+          theme?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -123,81 +123,169 @@ export const useBusinessData = ({ user, loading }: UseBusinessDataProps) => {
     }
   }, [invoices, user]);
 
-  // Data operations
+  // Data operations with proper error handling
   const handleDeleteClient = async (id: string) => {
     try {
-      await dataService.deleteClient(id, user.id);
-      setClients(clients.filter(c => c.id !== id));
-      toast({ title: "Client deleted successfully" });
+      if (user) {
+        await dataService.deleteClient(id, user.id);
+        setClients(clients.filter(c => c.id !== id));
+        toast({ title: "Client deleted successfully" });
+      } else {
+        // Handle localStorage deletion for non-authenticated users
+        const updatedClients = clients.filter(c => c.id !== id);
+        setClients(updatedClients);
+        localStorage.setItem('invoicepro_clients', JSON.stringify(updatedClients));
+        toast({ title: "Client deleted successfully" });
+      }
     } catch (error) {
+      console.error('Error deleting client:', error);
       toast({ title: "Error deleting client", variant: "destructive" });
     }
   };
 
   const handleDeleteProduct = async (id: string) => {
     try {
-      await dataService.deleteProduct(id, user.id);
-      setProducts(products.filter(p => p.id !== id));
-      toast({ title: "Product deleted successfully" });
+      if (user) {
+        await dataService.deleteProduct(id, user.id);
+        setProducts(products.filter(p => p.id !== id));
+        toast({ title: "Product deleted successfully" });
+      } else {
+        // Handle localStorage deletion for non-authenticated users
+        const updatedProducts = products.filter(p => p.id !== id);
+        setProducts(updatedProducts);
+        localStorage.setItem('invoicepro_products', JSON.stringify(updatedProducts));
+        toast({ title: "Product deleted successfully" });
+      }
     } catch (error) {
+      console.error('Error deleting product:', error);
       toast({ title: "Error deleting product", variant: "destructive" });
     }
   };
 
   const handleDeleteService = async (id: string) => {
     try {
-      await dataService.deleteService(id, user.id);
-      setServices(services.filter(s => s.id !== id));
-      toast({ title: "Service deleted successfully" });
+      if (user) {
+        await dataService.deleteService(id, user.id);
+        setServices(services.filter(s => s.id !== id));
+        toast({ title: "Service deleted successfully" });
+      } else {
+        // Handle localStorage deletion for non-authenticated users
+        const updatedServices = services.filter(s => s.id !== id);
+        setServices(updatedServices);
+        localStorage.setItem('invoicepro_services', JSON.stringify(updatedServices));
+        toast({ title: "Service deleted successfully" });
+      }
     } catch (error) {
+      console.error('Error deleting service:', error);
       toast({ title: "Error deleting service", variant: "destructive" });
     }
   };
 
   const handleDeleteInvoice = async (id: string) => {
     try {
-      await dataService.deleteInvoice(id, user.id);
-      setInvoices(invoices.filter(i => i.id !== id));
-      toast({ title: "Invoice deleted successfully" });
+      if (user) {
+        await dataService.deleteInvoice(id, user.id);
+        setInvoices(invoices.filter(i => i.id !== id));
+        toast({ title: "Invoice deleted successfully" });
+      } else {
+        // Handle localStorage deletion for non-authenticated users
+        const updatedInvoices = invoices.filter(i => i.id !== id);
+        setInvoices(updatedInvoices);
+        localStorage.setItem('invoicepro_invoices', JSON.stringify(updatedInvoices));
+        toast({ title: "Invoice deleted successfully" });
+      }
     } catch (error) {
+      console.error('Error deleting invoice:', error);
       toast({ title: "Error deleting invoice", variant: "destructive" });
     }
   };
 
-  // AI Assistant handlers
+  // AI Assistant handlers with proper user check
   const handleAICreateClient = async (clientData: Omit<Client, 'id' | 'createdAt'>) => {
     try {
-      const newClient = await dataService.createClient(clientData, user.id);
-      setClients([...clients, newClient]);
+      if (user) {
+        const newClient = await dataService.createClient(clientData, user.id);
+        setClients([...clients, newClient]);
+      } else {
+        // Handle localStorage creation for non-authenticated users
+        const newClient: Client = {
+          ...clientData,
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString()
+        };
+        const updatedClients = [...clients, newClient];
+        setClients(updatedClients);
+        localStorage.setItem('invoicepro_clients', JSON.stringify(updatedClients));
+      }
     } catch (error) {
       console.error('Error creating client:', error);
+      toast({ title: "Error creating client", variant: "destructive" });
     }
   };
 
   const handleAICreateProduct = async (productData: Omit<Product, 'id' | 'createdAt'>) => {
     try {
-      const newProduct = await dataService.createProduct(productData, user.id);
-      setProducts([...products, newProduct]);
+      if (user) {
+        const newProduct = await dataService.createProduct(productData, user.id);
+        setProducts([...products, newProduct]);
+      } else {
+        // Handle localStorage creation for non-authenticated users
+        const newProduct: Product = {
+          ...productData,
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString()
+        };
+        const updatedProducts = [...products, newProduct];
+        setProducts(updatedProducts);
+        localStorage.setItem('invoicepro_products', JSON.stringify(updatedProducts));
+      }
     } catch (error) {
       console.error('Error creating product:', error);
+      toast({ title: "Error creating product", variant: "destructive" });
     }
   };
 
   const handleAICreateService = async (serviceData: Omit<Service, 'id' | 'createdAt'>) => {
     try {
-      const newService = await dataService.createService(serviceData, user.id);
-      setServices([...services, newService]);
+      if (user) {
+        const newService = await dataService.createService(serviceData, user.id);
+        setServices([...services, newService]);
+      } else {
+        // Handle localStorage creation for non-authenticated users
+        const newService: Service = {
+          ...serviceData,
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString()
+        };
+        const updatedServices = [...services, newService];
+        setServices(updatedServices);
+        localStorage.setItem('invoicepro_services', JSON.stringify(updatedServices));
+      }
     } catch (error) {
       console.error('Error creating service:', error);
+      toast({ title: "Error creating service", variant: "destructive" });
     }
   };
 
   const handleAICreateInvoice = async (invoiceData: Omit<Invoice, 'id' | 'createdAt'>) => {
     try {
-      const newInvoice = await dataService.createInvoice(invoiceData, user.id);
-      setInvoices([...invoices, newInvoice]);
+      if (user) {
+        const newInvoice = await dataService.createInvoice(invoiceData, user.id);
+        setInvoices([...invoices, newInvoice]);
+      } else {
+        // Handle localStorage creation for non-authenticated users
+        const newInvoice: Invoice = {
+          ...invoiceData,
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString()
+        };
+        const updatedInvoices = [...invoices, newInvoice];
+        setInvoices(updatedInvoices);
+        localStorage.setItem('invoicepro_invoices', JSON.stringify(updatedInvoices));
+      }
     } catch (error) {
       console.error('Error creating invoice:', error);
+      toast({ title: "Error creating invoice", variant: "destructive" });
     }
   };
 
