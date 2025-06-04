@@ -1,0 +1,14 @@
+
+
+const config = {
+  appId: 'app.com.invoicepro',
+  appName: 'precise-price-print',
+  webDir: 'dist',
+  bundledWebRuntime: false,
+  server: {
+    url: "https://7a833778-894b-4f17-b494-9b0768ddc258.lovableproject.com?forceHideBadge=true",
+    cleartext: true
+  }
+};
+
+export default config;
