@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Mail, Lock, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
+import Logo from '@/components/Common/Logo';
 
 interface AuthFormProps {
   onBack?: () => void;
@@ -67,22 +68,21 @@ const AuthForm = ({ onBack }: AuthFormProps) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+      <Card className="w-full max-w-md relative">
+        <CardHeader className="text-center pb-2">
           {onBack && (
             <Button variant="ghost" className="absolute left-4 top-4" onClick={onBack}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
           )}
-          <div className="flex items-center justify-center mb-4">
-            <FileText className="h-8 w-8 text-blue-600 mr-2" />
-            <h1 className="text-2xl font-bold">InvoicePro</h1>
+          <div className="flex flex-col items-center justify-center space-y-2">
+            <Logo className="mb-2" textClassName="text-2xl" />
+            <CardTitle className="text-xl">Welcome Back</CardTitle>
+            <CardDescription className="text-sm">
+              Sign in to your account or create a new one to get started
+            </CardDescription>
           </div>
-          <CardTitle>Welcome to InvoicePro</CardTitle>
-          <CardDescription>
-            Sign in to your account or create a new one to get started
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">

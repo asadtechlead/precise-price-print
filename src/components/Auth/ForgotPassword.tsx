@@ -8,6 +8,7 @@ import { Mail, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { dataService } from '@/services/dataService';
 import { useToast } from '@/hooks/use-toast';
+import Logo from '@/components/Common/Logo';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -39,21 +40,24 @@ const ForgotPassword = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+      <Card className="w-full max-w-md relative">
+        <CardHeader className="text-center pb-2">
           <Button variant="ghost" className="absolute left-4 top-4" asChild>
             <Link to="/auth">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Link>
           </Button>
-          <CardTitle>Forgot Password</CardTitle>
-          <CardDescription>
-            {submitted 
-              ? "Check your email for a link to reset your password."
-              : "Enter your email and we'll send you a link to reset your password."
-            }
-          </CardDescription>
+          <div className="flex flex-col items-center justify-center space-y-2">
+            <Logo className="mb-2" textClassName="text-2xl" />
+            <CardTitle className="text-xl">Forgot Password</CardTitle>
+            <CardDescription className="text-sm">
+              {submitted 
+                ? "Check your email for a link to reset your password."
+                : "Enter your email and we'll send you a link to reset your password."
+              }
+            </CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
           {!submitted ? (

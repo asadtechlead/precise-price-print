@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Home, Users, Package, Briefcase, FileText, BarChart2, Settings, User } from 'lucide-react';
+import { Home, Users, FileText, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface MobileNavigationProps {
@@ -13,13 +12,12 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({ currentPage, onNavi
     { id: 'dashboard', icon: Home, label: 'Home' },
     { id: 'clients', icon: Users, label: 'Clients' },
     { id: 'invoices', icon: FileText, label: 'Invoices' },
-    { id: 'services', icon: Briefcase, label: 'Services' },
-    { id: 'profile', icon: User, label: 'Profile' }
+    { id: 'ai-assistant', icon: Bot, label: 'AI' }
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-lg py-2 px-4 z-50">
-      <div className="flex justify-between items-center">
+    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-lg py-2 px-1 z-50">
+      <div className="flex justify-around">
         {navItems.map((item) => {
           const isActive = currentPage === item.id;
           return (
@@ -27,8 +25,10 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({ currentPage, onNavi
               key={item.id}
               variant="ghost"
               size="sm"
-              className={`flex flex-col items-center p-2 ${
-                isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500'
+              className={`flex flex-col items-center p-2 min-w-0 flex-1 ${
+                isActive 
+                  ? 'text-blue-600 dark:text-blue-400' 
+                  : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100'
               }`}
               onClick={() => onNavigate(item.id)}
             >

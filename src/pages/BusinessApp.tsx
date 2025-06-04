@@ -6,9 +6,11 @@ import { Currency } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useBusinessData } from '@/hooks/useBusinessData';
 import { useFormStates } from '@/hooks/useFormStates';
-import MobileLayout from '@/components/Layout/MobileLayout';
-import BusinessAppContent from '@/components/BusinessApp/BusinessAppContent';
 import { useNavigate } from 'react-router-dom';
+import MobileLayout from '@/components/Layout/MobileLayout';
+import DesktopLayout from '@/components/Layout/DesktopLayout';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import BusinessAppContent from '@/components/BusinessApp/BusinessAppContent';
 
 const CURRENCIES: Currency[] = [
   { code: 'PKR', symbol: 'Rs', name: 'Pakistani Rupee' },
@@ -224,8 +226,12 @@ const BusinessApp = () => {
     return null; // This should never happen since we have ProtectedRoute in App.tsx
   }
 
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+  
+  const Layout = isDesktop ? DesktopLayout : MobileLayout;
+
   return (
-    <MobileLayout currentPage={currentPage} onNavigate={handleNavigate}>
+    <Layout currentPage={currentPage} onNavigate={handleNavigate}>
       <BusinessAppContent
         currentPage={currentPage}
         currency={currency}
@@ -274,7 +280,7 @@ const BusinessApp = () => {
         onSignOut={handleSignOut}
         onUpdateProfile={handleUpdateProfile}
       />
-    </MobileLayout>
+    </Layout>
   );
 };
 
