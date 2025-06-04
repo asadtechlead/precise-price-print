@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Currency, Client, Product, Service, Invoice } from '@/types';
 import Dashboard from '@/components/Dashboard/Dashboard';
 import ClientList from '@/components/Clients/ClientList';
@@ -10,9 +10,12 @@ import ServiceList from '@/components/Services/ServiceList';
 import ServiceForm from '@/components/Services/ServiceForm';
 import InvoiceList from '@/components/Invoices/InvoiceList';
 import InvoiceForm from '@/components/Invoices/InvoiceForm';
+import InvoiceView from '@/components/Invoices/InvoiceView';
 import Analytics from '@/components/Analytics/Analytics';
 import Settings from '@/components/Settings/Settings';
 import AIAssistant from '@/components/AI/AIAssistant';
+import UserProfile from '@/components/Auth/UserProfile';
+import { useAuth } from '@/hooks/useAuth';
 
 interface BusinessAppContentProps {
   currentPage: string;
@@ -31,6 +34,7 @@ interface BusinessAppContentProps {
   editingProduct?: Product;
   editingService?: Service;
   editingInvoice?: Invoice;
+  viewingInvoice?: Invoice;
   user: any;
   onCurrencyChange: (currency: Currency) => void;
   onClientSave: (clientData: any) => Promise<void>;
@@ -53,10 +57,13 @@ interface BusinessAppContentProps {
   onInvoiceAdd: () => void;
   onInvoiceEdit: (invoice: Invoice) => void;
   onInvoiceView: (invoice: Invoice) => void;
+  onInvoiceViewClose: () => void;
   onAICreateClient: (clientData: any) => Promise<void>;
   onAICreateProduct: (productData: any) => Promise<void>;
   onAICreateService: (serviceData: any) => Promise<void>;
   onAICreateInvoice: (invoiceData: any) => Promise<void>;
+  onSignOut: () => void;
+  onUpdateProfile: (userData: any) => Promise<void>;
 }
 
 const BusinessAppContent = ({
@@ -76,6 +83,8 @@ const BusinessAppContent = ({
   editingProduct,
   editingService,
   editingInvoice,
+  viewingInvoice,
+  user,
   onCurrencyChange,
   onClientSave,
   onClientCancel,
@@ -97,10 +106,13 @@ const BusinessAppContent = ({
   onInvoiceAdd,
   onInvoiceEdit,
   onInvoiceView,
+  onInvoiceViewClose,
   onAICreateClient,
   onAICreateProduct,
   onAICreateService,
   onAICreateInvoice,
+  onSignOut,
+  onUpdateProfile
 }: BusinessAppContentProps) => {
   if (isClientFormOpen) {
     return (
@@ -148,6 +160,20 @@ const BusinessAppContent = ({
         currency={currency}
       />
     );
+  }
+
+  if (viewingInvoice) {
+    const client = clients.find(c => c.id === viewingInvoice.clientId);
+    if (client) {
+      return (
+        <InvoiceView 
+          invoice={viewingInvoice} 
+          client={client} 
+          onBack={onInvoiceViewClose} 
+          currency={currency} 
+        />
+      );
+    }
   }
 
   switch (currentPage) {
@@ -209,6 +235,8 @@ const BusinessAppContent = ({
       );
     case 'settings':
       return <Settings currency={currency} currencies={currencies} onCurrencyChange={onCurrencyChange} />;
+    case 'profile':
+      return <UserProfile user={user} onUpdateProfile={onUpdateProfile} onSignOut={onSignOut} />;
     default:
       return <Dashboard stats={calculateDashboardStats()} currency={currency} />;
   }

@@ -3,8 +3,18 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Clock, DollarSign, Briefcase } from 'lucide-react';
+import { Plus, Search, Clock, DollarSign, Briefcase, Edit, Trash2 } from 'lucide-react';
 import { Service } from '@/types';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ServiceListProps {
   services: Service[];
@@ -16,6 +26,7 @@ interface ServiceListProps {
 
 const ServiceList = ({ services, onAddService, onEditService, onDeleteService, currency }: ServiceListProps) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
 
   const filteredServices = services.filter(service =>
     service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -23,6 +34,23 @@ const ServiceList = ({ services, onAddService, onEditService, onDeleteService, c
   );
 
   const formatCurrency = (amount: number) => `${currency.symbol}${amount.toLocaleString()}`;
+
+  const handleEditClick = (service: Service, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEditService(service);
+  };
+
+  const handleDeleteClick = (service: Service, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setServiceToDelete(service);
+  };
+
+  const confirmDelete = () => {
+    if (serviceToDelete) {
+      onDeleteService(serviceToDelete.id);
+      setServiceToDelete(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -48,7 +76,7 @@ const ServiceList = ({ services, onAddService, onEditService, onDeleteService, c
       {/* Services Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredServices.map((service) => (
-          <Card key={service.id} className="hover:shadow-md transition-shadow cursor-pointer">
+          <Card key={service.id} className="hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center justify-between">
                 <span className="truncate">{service.name}</span>
@@ -60,30 +88,32 @@ const ServiceList = ({ services, onAddService, onEditService, onDeleteService, c
             <CardContent className="space-y-3">
               <div className="flex items-center text-sm text-gray-600">
                 <Briefcase className="h-4 w-4 mr-2" />
-                <span className="truncate">{service.category}</span>
+                <span className="truncate">{service.category || 'No category'}</span>
               </div>
               <div className="flex items-center text-sm text-gray-600">
                 <Clock className="h-4 w-4 mr-2" />
                 <span>Hourly Rate</span>
               </div>
               
-              <p className="text-sm text-gray-500 line-clamp-2">{service.description}</p>
+              <p className="text-sm text-gray-500 line-clamp-2">{service.description || 'No description'}</p>
               
               <div className="flex gap-2 pt-2">
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => onEditService(service)}
+                  onClick={(e) => handleEditClick(service, e)}
                   className="flex-1"
                 >
+                  <Edit className="h-4 w-4 mr-1" />
                   Edit
                 </Button>
                 <Button 
                   variant="destructive" 
                   size="sm" 
-                  onClick={() => onDeleteService(service.id)}
+                  onClick={(e) => handleDeleteClick(service, e)}
                   className="flex-1"
                 >
+                  <Trash2 className="h-4 w-4 mr-1" />
                   Delete
                 </Button>
               </div>
@@ -107,6 +137,22 @@ const ServiceList = ({ services, onAddService, onEditService, onDeleteService, c
           )}
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!serviceToDelete} onOpenChange={(open) => !open && setServiceToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the service. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

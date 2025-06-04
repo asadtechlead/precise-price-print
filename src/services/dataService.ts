@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Client, Product, Service, Invoice, InvoiceItem } from '@/types';
 
@@ -19,6 +20,80 @@ const parseInvoiceItems = (items: any): InvoiceItem[] => {
 };
 
 class DataService {
+  // User Profile
+  async updateUserProfile(userId: string, userData: {
+    email?: string;
+    password?: string;
+    data?: Record<string, any>;
+  }): Promise<void> {
+    console.log('Updating user profile:', userId, userData);
+    
+    if (userData.email) {
+      const { error: emailError } = await supabase.auth.updateUser({
+        email: userData.email
+      });
+      
+      if (emailError) {
+        console.error('Error updating email:', emailError);
+        throw emailError;
+      }
+    }
+    
+    if (userData.password) {
+      const { error: passwordError } = await supabase.auth.updateUser({
+        password: userData.password
+      });
+      
+      if (passwordError) {
+        console.error('Error updating password:', passwordError);
+        throw passwordError;
+      }
+    }
+    
+    if (userData.data) {
+      const { error: dataError } = await supabase.auth.updateUser({
+        data: userData.data
+      });
+      
+      if (dataError) {
+        console.error('Error updating user data:', dataError);
+        throw dataError;
+      }
+    }
+    
+    console.log('User profile updated successfully');
+  }
+
+  // Password reset
+  async resetPassword(email: string): Promise<void> {
+    console.log('Resetting password for:', email);
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    
+    if (error) {
+      console.error('Error sending password reset:', error);
+      throw error;
+    }
+    
+    console.log('Password reset email sent successfully');
+  }
+
+  // Sign out
+  async signOut(): Promise<void> {
+    console.log('Signing out user');
+    
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      console.error('Error signing out:', error);
+      throw error;
+    }
+    
+    console.log('User signed out successfully');
+  }
+
   // Clients
   async getClients(userId: string): Promise<Client[]> {
     console.log('Fetching clients for user:', userId);

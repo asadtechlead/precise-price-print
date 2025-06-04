@@ -9,6 +9,8 @@ import { useFormStates } from '@/hooks/useFormStates';
 import AuthForm from '@/components/Auth/AuthForm';
 import MobileLayout from '@/components/Layout/MobileLayout';
 import BusinessAppContent from '@/components/BusinessApp/BusinessAppContent';
+import ForgotPassword from '@/components/Auth/ForgotPassword';
+import { Route, Routes, useNavigate, Navigate } from 'react-router-dom';
 
 const CURRENCIES: Currency[] = [
   { code: 'PKR', symbol: 'Rs', name: 'Pakistani Rupee' },
@@ -18,14 +20,17 @@ const CURRENCIES: Currency[] = [
   { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
   { code: 'SAR', symbol: 'ر.س', name: 'Saudi Riyal' },
   { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' }
 ];
 
 const BusinessApp = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [currency, setCurrency] = useState<Currency>(CURRENCIES[0]);
+  const [theme, setTheme] = useState<string>('light');
 
   // Use custom hooks for data and form state management
   const businessData = useBusinessData({ user, loading });
@@ -41,6 +46,16 @@ const BusinessApp = () => {
         setCurrency(foundCurrency);
       }
     }
+
+    const savedTheme = localStorage.getItem('invoicepro_theme');
+    if (savedTheme) {
+      setTheme(savedTheme);
+      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+      if (savedTheme === 'auto') {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.toggle('dark', isDark);
+      }
+    }
   }, []);
 
   // Save currency to localStorage
@@ -48,13 +63,23 @@ const BusinessApp = () => {
     localStorage.setItem('invoicepro_currency', JSON.stringify(currency));
   }, [currency]);
 
+  // Save and apply theme
+  useEffect(() => {
+    localStorage.setItem('invoicepro_theme', theme);
+    
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else if (theme === 'light') {
+      document.documentElement.classList.remove('dark');
+    } else if (theme === 'auto') {
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.classList.toggle('dark', isDark);
+    }
+  }, [theme]);
+
   // Show auth form if not authenticated
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
-
-  if (!user) {
-    return <AuthForm />;
   }
 
   const handleSaveInvoice = async (invoiceData: any) => {
@@ -86,6 +111,42 @@ const BusinessApp = () => {
 
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await dataService.signOut();
+      toast({ 
+        title: "Signed out successfully",
+        description: "You have been signed out of your account."
+      });
+      navigate('/auth');
+    } catch (error) {
+      toast({ 
+        title: "Sign out failed", 
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive" 
+      });
+    }
+  };
+
+  const handleUpdateProfile = async (userData: any) => {
+    try {
+      await dataService.updateUserProfile(user.id, userData);
+      toast({ title: "Profile updated successfully" });
+      return true;
+    } catch (error) {
+      toast({ 
+        title: "Update failed", 
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive" 
+      });
+      throw error;
+    }
+  };
+
+  const handleInvoiceViewClose = () => {
+    formStates.setViewingInvoice(undefined);
   };
 
   // Client handlers
@@ -160,6 +221,16 @@ const BusinessApp = () => {
     formStates.setEditingService(undefined);
   };
 
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/auth" element={<AuthForm />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="*" element={<Navigate to="/auth" replace />} />
+      </Routes>
+    );
+  }
+
   return (
     <MobileLayout currentPage={currentPage} onNavigate={handleNavigate}>
       <BusinessAppContent
@@ -179,6 +250,7 @@ const BusinessApp = () => {
         editingProduct={formStates.editingProduct}
         editingService={formStates.editingService}
         editingInvoice={formStates.editingInvoice}
+        viewingInvoice={formStates.viewingInvoice}
         user={user}
         onCurrencyChange={handleCurrencyChange}
         onClientSave={handleClientSave}
@@ -201,10 +273,13 @@ const BusinessApp = () => {
         onInvoiceAdd={formStates.handleCreateInvoice}
         onInvoiceEdit={formStates.handleEditInvoice}
         onInvoiceView={formStates.handleViewInvoice}
+        onInvoiceViewClose={handleInvoiceViewClose}
         onAICreateClient={businessData.handleAICreateClient}
         onAICreateProduct={businessData.handleAICreateProduct}
         onAICreateService={businessData.handleAICreateService}
         onAICreateInvoice={businessData.handleAICreateInvoice}
+        onSignOut={handleSignOut}
+        onUpdateProfile={handleUpdateProfile}
       />
     </MobileLayout>
   );

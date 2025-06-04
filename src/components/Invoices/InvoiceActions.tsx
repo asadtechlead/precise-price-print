@@ -43,6 +43,10 @@ const InvoiceActions = ({ invoice, client, onEdit, onView }: InvoiceActionsProps
     setLoading(true);
     try {
       await shareInvoice(`invoice-${invoice.id}`, `Invoice ${invoice.invoiceNumber}`);
+      toast({
+        title: "Share Successful",
+        description: "Invoice has been shared.",
+      });
     } catch (error) {
       toast({
         title: "Share Failed",
