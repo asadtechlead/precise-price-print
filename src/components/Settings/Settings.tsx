@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { Currency } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
 import { userSettingsService, UserSettings } from '@/services/userSettingsService';
 import { useToast } from '@/hooks/use-toast';
+import { useTheme } from '@/context/ThemeContext';
 
 interface SettingsProps {
   currency: Currency;
@@ -51,8 +51,8 @@ const Settings = ({ currency, currencies, onCurrencyChange }: SettingsProps) => 
     newInvoice: false,
   });
 
+  const { theme, setTheme } = useTheme();
   const [appearance, setAppearance] = useState({
-    theme: 'light',
     primaryColor: '#3B82F6',
     invoiceTemplate: 'modern',
   });
@@ -99,10 +99,13 @@ const Settings = ({ currency, currencies, onCurrencyChange }: SettingsProps) => 
 
           // Update appearance
           setAppearance({
-            theme: settings.theme || 'light',
             primaryColor: settings.primary_color || '#3B82F6',
             invoiceTemplate: settings.invoice_template || 'modern',
           });
+          // Update theme
+          if (settings.theme) {
+            setTheme(settings.theme as 'light' | 'dark' | 'auto');
+          }
 
           // Update currency if different
           if (settings.default_currency_code && settings.default_currency_code !== currency.code) {
@@ -195,7 +198,7 @@ const Settings = ({ currency, currencies, onCurrencyChange }: SettingsProps) => 
 
   const handleSaveAppearance = () => {
     saveSettings({
-      theme: appearance.theme,
+      theme,
       primary_color: appearance.primaryColor,
       invoice_template: appearance.invoiceTemplate,
     });
@@ -485,8 +488,8 @@ const Settings = ({ currency, currencies, onCurrencyChange }: SettingsProps) => 
             <div>
               <Label htmlFor="theme">Theme</Label>
               <Select
-                value={appearance.theme}
-                onValueChange={(value) => setAppearance(prev => ({ ...prev, theme: value }))}
+                value={theme}
+                onValueChange={(value) => setTheme(value as 'light' | 'dark' | 'auto')}
               >
                 <SelectTrigger>
                   <SelectValue />

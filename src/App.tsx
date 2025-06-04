@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
@@ -9,6 +8,7 @@ import FAQs from '@/pages/FAQs';
 import NotFound from '@/pages/NotFound';
 import BusinessApp from '@/pages/BusinessApp';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
+import { ThemeProvider } from '@/context/ThemeContext';
 import AuthForm from '@/components/Auth/AuthForm';
 import ForgotPassword from '@/components/Auth/ForgotPassword';
 import './App.css';
@@ -44,20 +44,11 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 function App() {
-  useEffect(() => {
-    // Check for dark mode preference
-    const theme = localStorage.getItem('invoicepro_theme') || 'light';
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else if (theme === 'auto') {
-      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.classList.toggle('dark', isDark);
-    }
-  }, []);
 
   return (
-    <AuthProvider>
-      <Router>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<Index />} />
@@ -91,6 +82,7 @@ function App() {
         <Toaster />
       </Router>
     </AuthProvider>
+  </ThemeProvider>
   );
 }
 
