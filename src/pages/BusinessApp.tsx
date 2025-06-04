@@ -6,11 +6,9 @@ import { Currency } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useBusinessData } from '@/hooks/useBusinessData';
 import { useFormStates } from '@/hooks/useFormStates';
-import AuthForm from '@/components/Auth/AuthForm';
 import MobileLayout from '@/components/Layout/MobileLayout';
 import BusinessAppContent from '@/components/BusinessApp/BusinessAppContent';
-import ForgotPassword from '@/components/Auth/ForgotPassword';
-import { Route, Routes, useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const CURRENCIES: Currency[] = [
   { code: 'PKR', symbol: 'Rs', name: 'Pakistani Rupee' },
@@ -77,10 +75,7 @@ const BusinessApp = () => {
     }
   }, [theme]);
 
-  // Show auth form if not authenticated
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
+  // Loading state is now handled before the auth check
 
   const handleSaveInvoice = async (invoiceData: any) => {
     try {
@@ -134,7 +129,7 @@ const BusinessApp = () => {
     try {
       await dataService.updateUserProfile(user.id, userData);
       toast({ title: "Profile updated successfully" });
-      return true;
+      return;
     } catch (error) {
       toast({ 
         title: "Update failed", 
@@ -221,14 +216,12 @@ const BusinessApp = () => {
     formStates.setEditingService(undefined);
   };
 
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
   if (!user) {
-    return (
-      <Routes>
-        <Route path="/auth" element={<AuthForm />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="*" element={<Navigate to="/auth" replace />} />
-      </Routes>
-    );
+    return null; // This should never happen since we have ProtectedRoute in App.tsx
   }
 
   return (
