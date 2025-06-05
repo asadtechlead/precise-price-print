@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
@@ -44,45 +45,44 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 function App() {
-
   return (
     <ThemeProvider>
       <AuthProvider>
         <Router>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<Index />} />
-          <Route path="/about" element={<AboutUs />} />
-          <Route path="/contact" element={<ContactUs />} />
-          <Route path="/faqs" element={<FAQs />} />
-          
-          {/* Auth routes - only accessible when not logged in */}
-          <Route path="/auth" element={
-            <PublicRoute>
-              <AuthForm />
-            </PublicRoute>
-          } />
-          
-          <Route path="/forgot-password" element={
-            <PublicRoute>
-              <ForgotPassword />
-            </PublicRoute>
-          } />
-          
-          {/* Protected routes - only accessible when logged in */}
-          <Route path="/app/*" element={
-            <ProtectedRoute>
-              <BusinessApp />
-            </ProtectedRoute>
-          } />
-          
-          {/* Catch-all route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Toaster />
-      </Router>
-    </AuthProvider>
-  </ThemeProvider>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/contact" element={<ContactUs />} />
+            <Route path="/faqs" element={<FAQs />} />
+            
+            {/* Auth routes - only accessible when not logged in */}
+            <Route path="/auth" element={
+              <PublicRoute>
+                <AuthForm />
+              </PublicRoute>
+            } />
+            
+            <Route path="/forgot-password" element={
+              <PublicRoute>
+                <ForgotPassword />
+              </PublicRoute>
+            } />
+            
+            {/* Protected routes - only accessible when logged in */}
+            <Route path="/app/*" element={
+              <ProtectedRoute>
+                <BusinessApp />
+              </ProtectedRoute>
+            } />
+            
+            {/* Catch-all route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster />
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
