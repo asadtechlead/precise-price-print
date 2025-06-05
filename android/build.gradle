@@ -2,18 +2,22 @@
 
 buildscript {
     ext {
-        kotlin_version = '1.8.22'
+        // Kotlin version
+        kotlin_version = '1.9.22'
+        
+        // Android Gradle Plugin version
+        agp_version = '8.7.3'
     }
+    
     repositories {
         google()
         mavenCentral()
     }
+    
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.7.2'
+        classpath "com.android.tools.build:gradle:$agp_version"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath 'com.google.gms:google-services:4.4.2'
-
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
     }
 }
 
@@ -24,13 +28,45 @@ allprojects {
         google()
         mavenCentral()
     }
+    
+    // Force Java 17 for all subprojects
+    subprojects {
+        tasks.withType(JavaCompile).configureEach {
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
+            options.release = 17
+        }
+        afterEvaluate {
+            if (project.plugins.hasPlugin('org.jetbrains.kotlin.jvm') || project.plugins.hasPlugin('org.jetbrains.kotlin.android')) {
+                tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+                    kotlinOptions {
+                        jvmTarget = '17'
+                    }
+                }
+            }
+        }
+    }
+    // Configure Java and Kotlin for all projects
+    tasks.withType(JavaCompile).configureEach {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    
+    // Configure Kotlin compilation
+    plugins.withId('org.jetbrains.kotlin.android') {
+        kotlin {
+            jvmToolchain(17)
+        }
+    }
+    
+    // Force consistent Kotlin stdlib versions
     configurations.all {
         resolutionStrategy {
-            // Force all Kotlin stdlib versions to use the same version
-            force "org.jetbrains.kotlin:kotlin-stdlib:1.8.22"
-            force "org.jetbrains.kotlin:kotlin-stdlib-common:1.8.22"
-            force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22"
-            force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22"
+            force "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+            force "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlin_version"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+            force 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
         }
     }
 }
